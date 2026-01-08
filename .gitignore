@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.pyc
+
+# AWS SAM
+.aws-sam/
+samconfig.toml
+
+# OS
+.DS_Store
