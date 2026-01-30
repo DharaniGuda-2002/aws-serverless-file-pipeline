@@ -31,7 +31,12 @@ Resources:
         Variables:
           TABLE_NAME: !Ref FileTable
       Policies:
-        - S3ReadPolicy:
-            BucketName: !Ref FileBucket
+        - AWSLambdaBasicExecutionRole
         - DynamoDBCrudPolicy:
             TableName: !Ref FileTable
+      Events:
+        FileUpload:
+          Type: S3
+          Properties:
+            Bucket: !Ref FileBucket
+            Events: s3:ObjectCreated:*
