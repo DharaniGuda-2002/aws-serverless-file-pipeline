@@ -8,6 +8,9 @@ Globals:
 
 Resources:
 
+  ############################
+  # DynamoDB Table
+  ############################
   FileTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -19,9 +22,40 @@ Resources:
         - AttributeName: file_id
           KeyType: HASH
 
+  ############################
+  # S3 Bucket
+  ############################
   FileBucket:
     Type: AWS::S3::Bucket
 
+  ############################
+  # Lambda: Generate Upload URL
+  ############################
+  GenerateUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/generate_upload_url/
+      Handler: app.handler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref FileTable
+          BUCKET_NAME: !Ref FileBucket
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FileTable
+        - S3WritePolicy:
+            BucketName: !Ref FileBucket
+      Events:
+        UploadApi:
+          Type: Api
+          Properties:
+            Path: /upload-url
+            Method: POST
+
+  ############################
+  # Lambda: Process Uploaded File
+  ############################
   ProcessUploadedFileFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -40,3 +74,27 @@ Resources:
           Properties:
             Bucket: !Ref FileBucket
             Events: s3:ObjectCreated:*
+
+  ############################
+  # Lambda: Get File Status
+  ############################
+  GetFileStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/get_file_status/
+      Handler: app.handler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref FileTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref FileTable
+      Events:
+        GetStatus:
+          Type: Api
+          Properties:
+            Path: /files/{file_id}
+            Method: GET
+
+
