@@ -2,44 +2,45 @@
 
 ## 📌 Overview
 
-This project implements a **serverless, event-driven backend system on AWS** that automatically processes files uploaded to cloud storage and stores metadata about those files in a database.
+This project is a **serverless, event-driven file upload and processing system built on AWS**.
+It allows clients to securely upload files to Amazon S3 using pre-signed URLs, automatically processes uploads using AWS Lambda, and stores file metadata in DynamoDB.
 
-The system is fully managed, scalable, and does not require provisioning or maintaining servers. It demonstrates real-world backend patterns used for **file ingestion pipelines, document processing systems, and cloud-native architectures**.
+The system is fully managed, scalable, and implemented using **Infrastructure as Code (AWS SAM)**.
 
 ---
 
 ## 🧠 What This Project Does
 
-* Files are uploaded to an Amazon S3 bucket
-* An S3 upload event automatically triggers an AWS Lambda function
-* The Lambda function processes the upload event
-* File metadata is stored in Amazon DynamoDB
+* Generates **pre-signed S3 upload URLs** via an API
+* Tracks file upload state (`UPLOADING` → `PROCESSED`)
+* Automatically processes uploaded files using S3 event triggers
+* Stores file metadata in DynamoDB
+* Exposes an API to **query file status**
 
-This entire flow is **event-driven** and **serverless**.
+All interactions are **serverless and event-driven**.
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-       +-------------+
-       | User / CLI  |
-       +-------------+
-              |
-              v
-       +-------------+
-       |  S3 Bucket  |
-       +-------------+
-              |
-              v
-       +------------------+
-       | Lambda Function  |
-       +------------------+
-              |
-              v
-       +----------------+
-       |  DynamoDB Table |
-       +----------------+
+Client
+  |
+  v
+API Gateway
+  |
+  +--> GenerateUploadUrl Lambda
+  |         |
+  |         v
+  |     DynamoDB (UPLOADING)
+  |
+  +--> S3 (via pre-signed URL)
+            |
+            v
+     ProcessUploadedFile Lambda
+            |
+            v
+        DynamoDB (PROCESSED)
 ```
 
 ---
@@ -47,38 +48,41 @@ This entire flow is **event-driven** and **serverless**.
 ## ⚙️ AWS Services Used
 
 * **Amazon S3** – Object storage and event source
-* **AWS Lambda** – Serverless compute for processing uploads
-* **Amazon DynamoDB** – NoSQL database for metadata storage
-* **AWS CloudWatch** – Logging and monitoring
-* **AWS SAM** – Infrastructure as Code and deployment
+* **AWS Lambda** – Serverless compute
+* **Amazon DynamoDB** – Metadata storage
+* **Amazon API Gateway** – REST APIs
+* **AWS CloudWatch** – Logs and debugging
+* **AWS SAM** – Infrastructure as Code
 * **IAM** – Permissions and security
 
 ---
 
 ## 🧩 Infrastructure (IaC)
 
-All infrastructure is defined using **AWS Serverless Application Model (SAM)** in `template.yaml`.
+All infrastructure is defined in `template.yaml` using **AWS Serverless Application Model (SAM)**.
 
-Resources provisioned:
+Provisioned resources include:
 
-* S3 bucket for file uploads
-* Lambda function triggered by S3 events
+* S3 bucket for uploads
 * DynamoDB table for file metadata
-* IAM roles and permissions
+* Three Lambda functions:
+
+  * Generate upload URL
+  * Process uploaded files
+  * Get file status
+* API Gateway endpoints
+* IAM roles and policies
 
 ---
 
 ## 🔁 File Processing Flow
 
-1. A file is uploaded to the S3 bucket
-2. S3 emits an `ObjectCreated` event
-3. Lambda is triggered automatically
-4. Lambda extracts metadata from the event:
-
-   * File name
-   * File size
-   * Upload timestamp
-5. Metadata is written to DynamoDB with status `PROCESSED`
+1. Client requests an upload URL
+2. API returns a **pre-signed S3 PUT URL**
+3. Client uploads file directly to S3
+4. S3 triggers a Lambda function
+5. Lambda extracts file metadata
+6. DynamoDB record is updated to `PROCESSED`
 
 ---
 
@@ -86,12 +90,12 @@ Resources provisioned:
 
 **Table: FileTable**
 
-| Attribute     | Type   | Description               |
-| ------------- | ------ | ------------------------- |
-| `file_id`     | String | File name (Primary Key)   |
-| `status`      | String | Processing status         |
-| `file_size`   | Number | Size of the uploaded file |
-| `uploaded_at` | String | Upload timestamp (UTC)    |
+| Attribute     | Type   | Description                   |
+| ------------- | ------ | ----------------------------- |
+| `file_id`     | String | Unique file identifier (PK)   |
+| `status`      | String | UPLOADING / PROCESSED         |
+| `file_size`   | Number | Size of uploaded file (bytes) |
+| `uploaded_at` | String | Upload timestamp (UTC)        |
 
 ---
 
@@ -120,36 +124,39 @@ sam deploy --guided
 
 ## 🧪 Testing the System
 
-Upload a test file to the S3 bucket:
+### 1. Generate upload URL
 
 ```bash
-echo "test upload" > test.txt
-aws s3 cp test.txt s3://<BUCKET_NAME>/test.txt
+curl -X POST https://<API_ID>.execute-api.us-east-1.amazonaws.com/Prod/upload-url
 ```
 
-Verify metadata in DynamoDB:
+### 2. Upload file using returned URL
 
 ```bash
-aws dynamodb scan \
-  --table-name <DYNAMODB_TABLE_NAME> \
-  --region us-east-1
+curl -X PUT "<UPLOAD_URL>" --upload-file test.txt
+```
+
+### 3. Check file status
+
+```bash
+curl https://<API_ID>.execute-api.us-east-1.amazonaws.com/Prod/files/<file_id>
 ```
 
 ---
 
 ## 🔮 Future Enhancements
 
-* API Gateway for upload/status APIs
-* Pre-signed S3 upload URLs
-* File type validation
 * Authentication (Amazon Cognito)
-* Asynchronous processing (SQS)
-* Enhanced metadata extraction
+* File validation and type checks
+* SQS for asynchronous processing
+* Object lifecycle policies
+* Large file multipart uploads
+* UI frontend
 
 ---
 
 ## 📌 Summary
 
-This project demonstrates how to build a **scalable, serverless file processing pipeline** using AWS managed services, following best practices for security, deployment, and architecture.
+This project demonstrates a **production-style serverless backend** using AWS managed services, covering API design, event-driven processing, security, and Infrastructure as Code.
 
-It is designed to reflect **real-world backend systems**, not toy examples.
+It reflects **real-world cloud engineering challenges**, not just a basic demo.
