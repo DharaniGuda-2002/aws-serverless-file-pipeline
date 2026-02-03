@@ -1,11 +1,18 @@
 # AWS Serverless File Upload & Metadata Processing System
 
+![AWS](https://img.shields.io/badge/AWS-Serverless-orange)
+![CI/CD](https://img.shields.io/github/actions/workflow/status/DharaniGuda-2002/aws-serverless-file-pipeline/deploy.yml?label=CI%2FCD)
+![Python](https://img.shields.io/badge/python-3.9-blue)
+![Infrastructure](https://img.shields.io/badge/IaC-AWS%20SAM-yellow)
+
+---
+
 ## 📌 Overview
 
 This project is a **serverless, event-driven file upload and processing system built on AWS**.
 It allows clients to securely upload files to Amazon S3 using pre-signed URLs, automatically processes uploads using AWS Lambda, and stores file metadata in DynamoDB.
 
-The system is fully managed, scalable, and implemented using **Infrastructure as Code (AWS SAM)**.
+The system is fully managed, scalable, and implemented using **Infrastructure as Code (AWS SAM)** with **automated CI/CD deployment via GitHub Actions**.
 
 ---
 
@@ -120,6 +127,8 @@ sam build
 sam deploy --guided
 ```
 
+> 🚀 The project is also **automatically deployed via GitHub Actions CI/CD** on every push to the main branch.
+
 ---
 
 ## 🧪 Testing the System
@@ -157,6 +166,6 @@ curl https://<API_ID>.execute-api.us-east-1.amazonaws.com/Prod/files/<file_id>
 
 ## 📌 Summary
 
-This project demonstrates a **production-style serverless backend** using AWS managed services, covering API design, event-driven processing, security, and Infrastructure as Code.
+This project demonstrates a **production-style serverless backend** using AWS managed services, covering API design, event-driven processing, security, Infrastructure as Code, and CI/CD automation.
 
 It reflects **real-world cloud engineering challenges**, not just a basic demo.
